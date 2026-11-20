@@ -1,0 +1,49 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: drones-as-a-service
+  namespace: dani
+  labels:
+    app.kubernetes.io/name: drones-as-a-service
+    app.kubernetes.io/part-of: drones-as-a-service
+  annotations:
+    external-dns.alpha.kubernetes.io/target: 116.203.56.250
+    external-dns.kubernetes.io/target: 116.203.56.250
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: dronemandaniel.sapi.click
+      http:
+        paths:
+          - path: /api/scheduling
+            pathType: Prefix
+            backend:
+              service:
+                name: scheduling
+                port:
+                  number: 3003
+          - path: /api/drones
+            pathType: Prefix
+            backend:
+              service:
+                name: drone-management
+                port:
+                  number: 3001
+          - path: /api/locations
+            pathType: Prefix
+            backend:
+              service:
+                name: location-management
+                port:
+                  number: 3002
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 8080
+  tls:
+    - hosts:
+        - dronemandaniel.sapi.click

@@ -1,0 +1,29 @@
+---
+# Redis is managed by the Redis Operator (opstree/redis-operator, CRD
+# redis.redis.opstreelabs.in/v1beta2, installed in namespace `redis-operator`).
+# Used as the pub/sub bus for live drone telemetry — no persistence required,
+# so the data volume is an emptyDir.
+apiVersion: redis.redis.opstreelabs.in/v1beta2
+kind: Redis
+metadata:
+  name: redis
+  namespace: dani
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/part-of: drones-as-a-service
+spec:
+  kubernetesConfig:
+    image: quay.io/opstree/redis:v7.0.15
+    imagePullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+  podSecurityContext:
+    runAsUser: 1000
+    fsGroup: 1000
+  redisConfig:
+    maxMemoryPercentOfLimit: 80

@@ -1,0 +1,77 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: location-management
+  namespace: dani
+  labels:
+    app.kubernetes.io/name: location-management
+    app.kubernetes.io/part-of: drones-as-a-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: location-management
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: location-management
+        app.kubernetes.io/part-of: drones-as-a-service
+    spec:
+      imagePullSecrets:
+        - name: lighthouse-registry
+      containers:
+        - name: location-management
+          image: lighthouse.tohka.us/drone-management/location-management:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3002
+          envFrom:
+            - configMapRef:
+                name: drones-config
+          env:
+            - name: PORT
+              value: "3002"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: drones-db
+                  key: LOCATIONS_DATABASE_URL
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 3002
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3002
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              cpu: 500m
+              memory: 384Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: location-management
+  namespace: dani
+  labels:
+    app.kubernetes.io/name: location-management
+    app.kubernetes.io/part-of: drones-as-a-service
+spec:
+  selector:
+    app.kubernetes.io/name: location-management
+  ports:
+    - name: http
+      port: 3002
+      targetPort: 3002

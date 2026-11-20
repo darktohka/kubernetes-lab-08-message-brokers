@@ -1,0 +1,37 @@
+---
+# One CloudNativePG cluster, three logical databases (one per microservice).
+# Database/role creation happens in 03-db-init-job.yaml because the Database
+# and DatabaseRole CRDs are not available to this service account.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: drones-pg
+  namespace: dani
+  labels:
+    app.kubernetes.io/name: drones-pg
+    app.kubernetes.io/part-of: drones-as-a-service
+spec:
+  instances: 1
+  primaryUpdateStrategy: unsupervised
+  # Needed only by the bootstrap Job (03-db-init-job.yaml): creating the three
+  # per-service roles/databases requires CREATEROLE, which the app owner lacks.
+  # The generated secret is drones-pg-superuser.
+  enableSuperuserAccess: true
+  storage:
+    size: 2Gi
+    storageClass: local-path
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+  postgresql:
+    parameters:
+      max_connections: "100"
+      shared_buffers: 128MB
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi

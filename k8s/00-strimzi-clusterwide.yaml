@@ -1,0 +1,60 @@
+---
+# Strimzi is installed from the upstream bundle into namespace `strimzi`, where
+# it is namespaced by default (STRIMZI_NAMESPACE=metadata.namespace). Tenants
+# must be able to create Kafka resources in their own namespaces, so the
+# operator is switched to cluster-wide mode:
+#
+#   1. apply this file with the admin kubeconfig (grants the operator its
+#      watched, namespaced and entity-operator resources in every namespace),
+#   2. remove STRIMZI_NAMESPACE from the operator Deployment,
+#   3. restart it:  kubectl rollout restart deploy/strimzi-cluster-operator -n strimzi
+#
+# Apply with:
+#   KUBECONFIG=~/.kube/adminconfig kubectl apply -f k8s/00-strimzi-clusterwide.yaml
+#
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: strimzi-cluster-operator-watched
+  labels:
+    app: strimzi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: strimzi-cluster-operator-watched
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-cluster-operator
+    namespace: strimzi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: strimzi-cluster-operator-namespaced
+  labels:
+    app: strimzi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: strimzi-cluster-operator-namespaced
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-cluster-operator
+    namespace: strimzi
+---
+# The operator creates the Entity Operator Role itself, so it must already hold
+# (and be allowed to delegate) the topic/user permissions cluster-wide.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: strimzi-cluster-operator-entity-operator-delegation
+  labels:
+    app: strimzi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: strimzi-entity-operator
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-cluster-operator
+    namespace: strimzi

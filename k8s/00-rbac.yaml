@@ -1,0 +1,52 @@
+---
+# One-time grant so the `dani` service account can manage the operator CRs it
+# owns: Strimzi (Kafka) and the Redis operator. Apply with the cluster admin
+# kubeconfig:
+#
+#   KUBECONFIG=~/.kube/adminconfig kubectl apply -f k8s/00-rbac.yaml
+#
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: drones-operator-access
+  namespace: dani
+  labels:
+    app.kubernetes.io/part-of: drones-as-a-service
+rules:
+  - apiGroups: ["kafka.strimzi.io"]
+    resources:
+      - kafkas
+      - kafkatopics
+      - kafkanodepools
+      - kafkausers
+      - kafkaconnects
+      - kafkamirrormaker2s
+      - kafkabridges
+      - kafkarebalances
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+  - apiGroups: ["core.strimzi.io"]
+    resources: ["strimzipodsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["redis.redis.opstreelabs.in"]
+    resources:
+      - redis
+      - redisclusters
+      - redisreplications
+      - redissentinels
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: drones-operator-access
+  namespace: dani
+  labels:
+    app.kubernetes.io/part-of: drones-as-a-service
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: drones-operator-access
+subjects:
+  - kind: ServiceAccount
+    name: dani
+    namespace: dani
